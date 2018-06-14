@@ -31,23 +31,23 @@ ENV GOPATH=/go
 # go binary path is /usr/local/go/bin
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 
-EXPOSE 6789
+EXPOSE 6788
 
-COPY . /go/src/github.com/pouchcontainer/pouchrobot
+COPY . /go/src/github.com/ZouRui89/pouchrobot
 
-RUN go get github.com/pouchcontainer/pouchrobot
+RUN go get github.com/ZouRui89/pouchrobot
 
 # try to skip StrictHostKeyChecking when executing git
 RUN echo "StrictHostKeyChecking no" >> /etc/ssh/ssh_config
 
-RUN mkdir -p /go/src/github.com/alibaba \
-    && cd /go/src/github.com/alibaba \
+RUN mkdir -p /go/src/github.com/ZouRui89 \
+    && cd /go/src/github.com/ZouRui89 \
     && git clone https://github.com/pouchrobot/pouch.git \
     && cd pouch \
     && git remote remove origin \
     && git remote add origin git@github.com:pouchrobot/pouch.git \
-    && git remote add upstream https://github.com/alibaba/pouch.git \
+    && git remote add upstream https://github.com/ZouRui89/pouch.git \
     && git config user.name "pouchrobot" \ 
     && git config user.email "pouch-dev@list.alibaba-inc.com"
 
-WORKDIR /go/src/github.com/alibaba/pouch
+WORKDIR /go/src/github.com/ZouRui89/pouch
