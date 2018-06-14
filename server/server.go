@@ -75,6 +75,7 @@ func (s *Server) Run() error {
 	if listenAddress == "" {
 		listenAddress = DefaultAddress
 	}
+	logrus.Infof("listen to %v", listenAddress)
 
 	r := mux.NewRouter()
 
@@ -85,7 +86,11 @@ func (s *Server) Run() error {
 	r.HandleFunc("/events", s.gitHubEventHandler).Methods("POST")
 
 	// travisCI webhook API
-	r.HandleFunc("/ci_notifications", s.ciNotificationHandler).Methods("POST")
+	r.HandleFunc("/travis_ci_notifications", s.travisCINotificationHandler).Methods("POST")
+
+	// circleCI webhook API
+	r.HandleFunc("/circleci_notifications", s.circleCINotificationHandler).Methods("POST")
+
 	return http.ListenAndServe(listenAddress, r)
 }
 
@@ -101,12 +106,14 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) gitHubEventHandler(w http.ResponseWriter, r *http.Request) {
 	logrus.Debug("/events request received")
 	eventType := r.Header.Get("X-Github-Event")
+	logrus.Infof("in server: eventType is %v", eventType)
 
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	logrus.Infof("in server: data is %v", data)
 
 	r.Body.Close()
 
@@ -119,9 +126,9 @@ func (s *Server) gitHubEventHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-// ciNotificationHandler handles webhook events from CI system.
-func (s *Server) ciNotificationHandler(w http.ResponseWriter, r *http.Request) {
-	logrus.Info("/ci_notifications events reveived")
+// travisCINotificationHandler handles webhook events from travis CI system.
+func (s *Server) travisCINotificationHandler(w http.ResponseWriter, r *http.Request) {
+	logrus.Info("/travis_ci_notifications events received")
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -132,7 +139,29 @@ func (s *Server) ciNotificationHandler(w http.ResponseWriter, r *http.Request) {
 	logrus.Debugf("r.PostForm[payload]: %v", rawStr)
 
 	jsonStr := strings.Replace(rawStr, `\"`, `"`, -1)
-	if err := s.ciNotifier.Process(jsonStr); err != nil {
+	if err := s.ciNotifier.TravisCIProcess(jsonStr); err != nil {
+		logrus.Errorf("failed to process ci notification: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	return
+}
+
+// circleCINotificationHandler handles webhook events from circleCI system.
+func (s *Server) circleCINotificationHandler(w http.ResponseWriter, r *http.Request) {
+	logrus.Info("/circleci_notifications events received")
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	rawStr := r.PostForm.Get("payload")
+
+	logrus.Debugf("r.PostForm[payload]: %v", rawStr)
+	jsonStr := strings.Replace(rawStr, `\"`, `"`, -1)
+	if err := s.ciNotifier.CircleCIProcess(jsonStr); err != nil {
 		logrus.Errorf("failed to process ci notification: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

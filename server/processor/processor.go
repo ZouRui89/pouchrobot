@@ -60,14 +60,18 @@ func New(client *gh.Client) *Processor {
 
 // HandleEvent processes an event received from github
 func (p *Processor) HandleEvent(eventType string, data []byte) error {
+	logrus.Infof("in processor, evenType is %v, data is %v", eventType, data)
 	switch eventType {
 	case "issues":
+		logrus.Infof("the eventType is issues: %v", eventType)
 		p.IssueProcessor.Process(data)
 	case "pull_request":
+		logrus.Infof("the eventType is pr: %v", eventType)
 		p.PullRequestProcessor.Process(data)
 	case "issue_comment":
 		// since pr is also a kind of issue, we need to first make it clear
 		issueType := judgeIssueOrPR(data)
+		logrus.Infof("get eventType: %v", eventType)
 		logrus.Infof("get issueType: %s", issueType)
 		if issueType == "issue" {
 			p.IssueCommentProcessor.Process(data)
