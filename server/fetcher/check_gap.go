@@ -39,6 +39,7 @@ func (f *Fetcher) CheckPRsGap() error {
 	}
 
 	for _, pr := range prs {
+		logrus.Info("start to check prs")
 		f.checkPRGap(pr)
 	}
 	return nil
@@ -46,33 +47,48 @@ func (f *Fetcher) CheckPRsGap() error {
 
 func (f *Fetcher) checkPRGap(p *github.PullRequest) error {
 	pr, err := f.client.GetSinglePR(*(p.Number))
+	logrus.Infof("start to check pr %d", *(p.Number))
 	if err != nil {
-		return nil
+		return err
 	}
 
 	// get master branch info
 	if err := prepareMasterEnv(); err != nil {
+		logrus.Error(err)
 		return err
 	}
+	logrus.Infof("prepare master env done :pr %d", *(p.Number))
+
 	msLogString, err := getLogInfo("master")
 	if err != nil {
+		logrus.Error(err)
 		return err
 	}
+	logrus.Infof("get log info done :pr %d", *(p.Number))
 
 	// get pr branch info
 	prNum := strconv.Itoa(*p.Number)
 	if err = cleanPrBranchEnv(prNum); err != nil {
-		return nil
+		logrus.Error(err)
+		return err
 	}
+	logrus.Infof("clean exsiting branch done:pr %d", *(p.Number))
+
 	if err = preparePrBranchEnv(prNum); err != nil {
-		return nil
+		logrus.Error(err)
+		return err
 	}
+	logrus.Infof("prepare pr branch env done :pr %d", *(p.Number))
+
 	prBrLogString, err := getLogInfo("pr branch " + prNum)
 	if err != nil {
-		return nil
+		logrus.Error(err)
+		return err
 	}
+	logrus.Infof("get pr log info done :pr %d", *(p.Number))
 
 	gap := compareAndgetGap(msLogString, prBrLogString)
+	logrus.Infof("the gap is %d", gap)
 	if gap < 10 {
 		return nil
 	}
@@ -183,7 +199,7 @@ func preparePrBranchEnv(prNum string) error {
 
 func cleanPrBranchEnv(prNum string) error {
 	cmd := exec.Command("git", "branch", "-D", "new-"+prNum)
-	if err := cmd.Run(); err != nil {
+	if err := cmd.Run(); err != nil && !strings.Contains(err.Error(), "not found") {
 		return fmt.Errorf("failed to remove existing pr %s branch %v", prNum, err)
 	}
 	return nil
