@@ -35,7 +35,7 @@ EXPOSE 6789
 
 COPY . /go/src/github.com/pouchcontainer/pouchrobot
 
-RUN go get github.com/pouchcontainer/pouchrobot
+RUN go get github.com/ZouRui89/pouchrobot
 
 # try to skip StrictHostKeyChecking when executing git
 RUN echo "StrictHostKeyChecking no" >> /etc/ssh/ssh_config

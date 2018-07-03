@@ -41,13 +41,8 @@ func New(client *gh.Client) *Fetcher {
 func (f *Fetcher) Run() {
 	logrus.Info("start to run fetcher")
 
-	go func() {
-		f.CheckPRsConflict()
-		time.Sleep(FETCHINTERVAL)
-	}()
-
-	go func() {
+	for {
 		f.CheckPRsGap()
 		time.Sleep(FETCHINTERVAL)
-	}()
+	}
 }

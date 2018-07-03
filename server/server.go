@@ -67,8 +67,6 @@ func NewServer(config config.Config) *Server {
 func (s *Server) Run() error {
 	// start fetcher, reporter and doc generator in goroutines
 	go s.fetcher.Run()
-	go s.reporter.Run()
-	go s.docGenerator.Run()
 
 	// start webserver
 	listenAddress := s.listenAddress
@@ -81,11 +79,6 @@ func (s *Server) Run() error {
 	// register ping api
 	r.HandleFunc("/_ping", pingHandler).Methods("GET")
 
-	// github webhook API
-	r.HandleFunc("/events", s.gitHubEventHandler).Methods("POST")
-
-	// travisCI webhook API
-	r.HandleFunc("/ci_notifications", s.ciNotificationHandler).Methods("POST")
 	return http.ListenAndServe(listenAddress, r)
 }
 
