@@ -70,6 +70,7 @@ func (f *Fetcher) checkPRGap(p *github.PullRequest, msLogString string) error {
 	prNum := strconv.Itoa(*p.Number)
 
 	if err = preparePrBranchEnv(prNum); err != nil {
+		handlePrConflict()
 		return fmt.Errorf("failed to prepare pr branch: %v", err)
 	}
 	logrus.Infof("prepare pr branch env done :pr %d", *(p.Number))
@@ -176,6 +177,25 @@ func preparePrBranchEnv(prNum string) error {
 	cmd := exec.Command("git", "pull", "upstream", "pull/"+prNum+"/head:"+"new-"+prNum)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to pull pr %s: %v", prNum, err)
+	}
+
+	return nil
+}
+
+func handlePrConflict() error {
+	cmd := exec.Command("git", "reset", "--hard", "HEAD^")
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to reset HEAD: %v", err)
+	}
+
+	cmd = exec.Command("git", "fetch", "upstream", "master")
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to git fetch upstream master: %v", err)
+	}
+
+	cmd = exec.Command("git", "rebase", "upstream/master")
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to git rebase upstream/master: %v", err)
 	}
 
 	return nil

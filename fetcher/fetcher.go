@@ -42,7 +42,7 @@ func (f *Fetcher) Run() {
 	logrus.Info("start to run fetcher")
 
 	for {
-		f.CheckPRsConflict()
+		// f.CheckPRsConflict()
 		f.CheckPRsGap()
 		time.Sleep(FETCHINTERVAL)
 	}
