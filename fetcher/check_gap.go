@@ -199,8 +199,8 @@ func handlePrConflict() error {
 	}
 
 	return nil
-
 }
+
 func getLogInfo(branch string) (string, error) {
 	var Out bytes.Buffer
 	cmd := exec.Command("git", "log", branch, "--oneline")
